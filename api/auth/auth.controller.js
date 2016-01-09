@@ -16,7 +16,6 @@ var LocalStrategy   = require('passport-local').Strategy;
 *
 */
 exports.registration = function(passport){
-console.log("2-------"); 
       
       passport.use('registration', new LocalStrategy({
             passReqToCallback : true // allows us to pass back the entire request to the callback
@@ -27,7 +26,7 @@ console.log("2-------");
             var hash = bcrypt.hashSync(req.body.cpassword, salt);
             var cpassword = hash; 
               findOrCreateUser = function(){
-                  // find a user in Mongo with provided username
+                  // find a user in Mongo with provided username or email
                   User.findOne({$or:[ {'username': username}, {'email': req.body.email}]}, function(err, user) {
                       // In case of any error, return using the done method
                       if (err){
@@ -39,7 +38,7 @@ console.log("2-------");
                           if(user.username==username) return done(null, false, {message:'User already exists with username: '+username});
                           if(user.email==req.body.email) return done(null, false, {message:'User already exists with email: '+req.body.email});
                       } else {
-                          // if there is no user with that email
+                          // if there is no user with that email / username
                           // create the user
                           var newUser = new User();
 
@@ -81,13 +80,13 @@ exports.login = function(passport){
         },
         function(req, username, password, done) { 
              if(req.body.username!="" && req.body.username.length>=4 && req.body.password!=undefined){
-              // check in mongo if a user with username exists or not
+              // check in mongo if a user with username / email exists or not
               User.findOne({$or:[{'username':username},{'email':username}]}, 
                   function(err, user) {
                       // In case of any error, return using the done method
                       if (err)
                           return done(err);
-                      // Username does not exist, log the error and redirect back
+                      // Username/email does not exist, log the error and redirect back
                       if (!user){
                           console.log('User Not Found with username '+username);
                           return done(null, false, {message: 'User Not found.'});                 
@@ -107,7 +106,7 @@ exports.login = function(passport){
         })
     );
 
-
+    //compare password
     var isValidPassword = function(user, password){
         return bcrypt.compareSync(password, user.password);
     }
