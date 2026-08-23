@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Register</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="card">
+      <h1>Create account</h1>
+      <form id="register">
+        <input
+          name="username"
+          placeholder="Username"
+          required
+          minlength="4"
+          maxlength="30"
+        /><input name="email" type="email" placeholder="Email" required /><input
+          name="password"
+          type="password"
+          placeholder="Password (8+ characters)"
+          required
+          minlength="8"
+        /><input
+          name="confirmPassword"
+          type="password"
+          placeholder="Confirm password"
+          required
+          minlength="8"
+        /><button>Register</button>
+      </form>
+      <p id="message"></p>
+      <a href="/login.html">Already have an account?</a>
+    </main>
+    <script src="/auth.js"></script>
+  </body>
+</html>

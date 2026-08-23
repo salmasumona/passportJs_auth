@@ -1,0 +1,21 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: mongodb://mongo:27017/passport_auth
+      SESSION_SECRET: change-this-to-a-long-random-secret-at-least-32-chars
+      COOKIE_SECURE: "false"
+      COOKIE_SAME_SITE: lax
+    depends_on:
+      mongo:
+        condition: service_started
+  mongo:
+    image: mongo:8
+    volumes:
+      - mongo_data:/data/db
+volumes:
+  mongo_data:
