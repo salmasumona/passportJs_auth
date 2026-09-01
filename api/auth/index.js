@@ -1,36 +1,32 @@
 'use strict';
 
 var express = require('express');
-var authcontroller = require('./auth.controller');
+var authController = require('./auth.controller');
 
-var router = express.Router();
-module.exports = function(passport){
+module.exports = function(passport) {
+  var router = express.Router();
+  authController.configure(passport);
 
-		authcontroller.registration(passport);
-		authcontroller.login(passport);
-		
-		router.post('/registration', function(req, res, next) {
-		  passport.authenticate('registration', function (err, user, info) {
-		  	if (err) { return next(err); }
-		    if (!user) return res.json(info.message);
-		    req.logIn(user, function(err) {
-		      if (err) { return next(err); }
-		      return res.json({username:user.username});
-		    });
-		  })(req, res, next)
-		});
+  function authenticate(strategy, successStatus) {
+    return function(req, res, next) {
+      passport.authenticate(strategy, function(err, user, info) {
+        if (err) {
+          return next(err);
+        }
+        if (!user) {
+          return res.status(400).json({ message: info && info.message ? info.message : 'Authentication failed.' });
+        }
+        return req.logIn(user, function(loginErr) {
+          if (loginErr) {
+            return next(loginErr);
+          }
+          return res.status(successStatus).json({ username: user.username });
+        });
+      })(req, res, next);
+    };
+  }
 
-		router.post('/login', function(req, res, next) {
-		  passport.authenticate('login', function (err, user, info) {
-		  	if (err) { return next(err); }
-		    if (!user) return res.json(info.message);
-		    req.logIn(user, function(err) {
-		      if (err) { return next(err); }
-		      return res.json({username:user.username});
-		    });
-
-		  })(req, res, next)
-		});
-
-		return router;
+  router.post('/registration', authenticate('registration', 201));
+  router.post('/login', authenticate('login', 200));
+  return router;
 };

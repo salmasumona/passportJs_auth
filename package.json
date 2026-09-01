@@ -1,22 +1,24 @@
 {
   "name": "Authentication",
   "version": "1.0.0",
-  "description": "",
+  "description": "Passport local-authentication example using Express and MongoDB",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "check": "node --check server.js && node --check routes.js && node --check api/auth/index.js && node --check api/auth/auth.controller.js",
     "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20.19.0"
   },
   "author": "Sumona Salma <sumona.uiu@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "bcryptjs": "^2.3.0",
-    "body-parser": "^1.14.2",
-    "connect-flash": "^0.1.1",
-    "express": "^4.13.3",
-    "express-session": "^1.12.1",
-    "mongoose": "^4.3.4",
-    "passport": "^0.3.2",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "mongoose": "^9.9.4",
+    "passport": "^0.7.0",
     "passport-local": "^1.0.0"
   }
 }

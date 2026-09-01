@@ -1,12 +1,13 @@
 'use strict';
 
-var config = {};
+require('dotenv').config({ quiet: true });
 
-config.mongoUri = "mongodb://localhost/authPassport";
-config.port = 1800;
-config.url = 'http://localhost:1800';
+var parsedPort = Number.parseInt(process.env.PORT, 10);
 
-config.mySecret="mySecrets";
-
-
-module.exports = config;
+module.exports = {
+  mongoUri: process.env.MONGO_URI || 'mongodb://localhost/authPassport',
+  port: Number.isInteger(parsedPort) && parsedPort > 0 && parsedPort <= 65535 ? parsedPort : 1800,
+  url: process.env.APP_URL || 'http://localhost:1800',
+  sessionSecret: process.env.SESSION_SECRET || 'change-this-development-secret',
+  nodeEnv: process.env.NODE_ENV || 'development'
+};

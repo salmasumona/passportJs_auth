@@ -4,17 +4,19 @@ myApp.controller('Logintrl',['$scope','$http','$window','$cookieStore',function(
 	
 	$scope.message = "Please enter your username and password for registration.";
 	$scope.messageLogin = "Please enter your username and password for login";
+	function errorMessage(response) {
+		return response.data && response.data.message ? response.data.message : "Something went wrong. Please try again.";
+	}
 	$scope.registration = function(){
 		if($scope.user!=undefined){
-			console.log($scope.user);
 			if($scope.user.username!="" && $scope.user.username.length>=4 && $scope.user.password!="" && $scope.user.cpassword!="" && $scope.user.password==$scope.user.cpassword){
-					$http.post("/auth/registration",$scope.user).success(function(response){
-						if(!response.username){
-							$scope.message = response;
-						}else{
-							$cookieStore.put('loggeduser', response.username);
+					$http.post("/auth/registration",$scope.user).then(function(response){
+						if(response.data.username){
+					    $cookieStore.put('loggeduser', response.data.username);
 						    $window.location.href = "/profile";							
 						}
+					}, function(response){
+						$scope.message = errorMessage(response);
 					});
 			}else if($scope.user.username=="" || $scope.user.password==""){
 				$scope.message = "Please enter your username and password. These fields can not be empty.";
@@ -32,19 +34,14 @@ myApp.controller('Logintrl',['$scope','$http','$window','$cookieStore',function(
 
 	$scope.login = function(){
 			if($scope.user!=undefined){
-				console.log($scope.user);
 				if($scope.user.username!="" && $scope.user.username.length>=4 && $scope.user.password!=""){
-								$http.post("/auth/login",$scope.user).success(function(response){
-									console.log(response);
-									if(!response.username){
-										$scope.message = response;	
+								$http.post("/auth/login",$scope.user).then(function(response){
+									if (response.data.username){
+										$cookieStore.put('loggeduser', response.data.username);
+										$window.location.href = "/profile";
 									}
-								    if (response.username){
-								    	$cookieStore.put('loggeduser', response.username);
-								        $window.location.href = "/profile";
-								    }
-			
-										
+								}, function(response){
+									$scope.messageLogin = errorMessage(response);
 								});
 						}
 					}
