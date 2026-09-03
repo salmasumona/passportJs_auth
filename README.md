@@ -146,3 +146,25 @@ curl http://127.0.0.1:1800/health
 sudo nginx -t
 sudo systemctl status nginx
 ```
+
+## Phase 1 Improvements
+
+This version includes:
+- Security response headers without adding a runtime security dependency.
+- Authentication endpoint rate limiting (30 requests per IP per 15 minutes).
+- Server-side registration/login input validation and normalization.
+- Structured JSON application logging.
+- Node.js built-in automated tests (`npm test`).
+- CI runs syntax checks and tests before deployment.
+- Deployment health check retries for up to 60 seconds and prints PM2 logs when it fails.
+
+### Phase 1 validation
+Run locally:
+```bash
+npm ci
+npm run check
+npm test
+```
+
+### Production note
+The in-memory rate limiter and Express session store are process-local. They are suitable for a single EC2 learning/demo server, but for multiple instances use a shared rate-limit/session store such as Redis or another persistent store.

@@ -24,6 +24,9 @@ jobs:
       - name: Syntax check
         run: npm run check
 
+      - name: Run tests
+        run: npm test
+
   deploy:
     needs: ci
     runs-on: ubuntu-latest
@@ -46,16 +49,16 @@ jobs:
             chmod 600 .env
             pm2 startOrRestart ecosystem.config.js --update-env
             pm2 save
-
-            sleep 5
-
-            if ! curl -fsS http://127.0.0.1:1800/health; then
-              echo "Health check failed."
-              echo "PM2 status:"
-              pm2 status
-              echo "PM2 logs:"
-              pm2 logs passport-auth --lines 100 --nostream
-              exit 1
-            fi
-
-            echo "Deployment successful."
+            echo "Waiting for application health..."
+            for i in {1..12}; do
+              if curl -fsS http://127.0.0.1:1800/health; then
+                echo "Application is healthy."
+                exit 0
+              fi
+              echo "Health check attempt $i failed; retrying in 5 seconds..."
+              sleep 5
+            done
+            echo "Application failed health check."
+            pm2 status
+            pm2 logs passport-auth --lines 100 --nostream
+            exit 1

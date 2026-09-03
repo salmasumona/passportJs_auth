@@ -3,31 +3,26 @@
 var bcrypt = require('bcryptjs');
 var LocalStrategy = require('passport-local').Strategy;
 var User = require('./auth.model');
-
-function hasCredentials(username, password) {
-  return typeof username === 'string' && username.trim().length >= 4 &&
-    typeof password === 'string' && password.length > 0;
-}
+var validation = require('../../utils/validation');
 
 exports.configure = function(passport) {
   passport.use('registration', new LocalStrategy({ passReqToCallback: true }, async function(req, username, password, done) {
-    if (!hasCredentials(username, password) || typeof req.body.email !== 'string' ||
-      !req.body.email.trim() || password !== req.body.cpassword) {
-      return done(null, false, { message: 'Provide a username, email, and matching password (username must be at least 4 characters).' });
+    var body = Object.assign({}, req.body, { username: username, password: password });
+    var input = validation.validateRegistration(body);
+    if (!input.valid) {
+      return done(null, false, { message: input.errors[0] });
     }
 
     try {
-      var normalizedUsername = username.trim();
-      var normalizedEmail = req.body.email.trim().toLowerCase();
-      var existingUser = await User.findOne({ $or: [{ username: normalizedUsername }, { email: normalizedEmail }] });
+      var existingUser = await User.findOne({ $or: [{ username: input.username }, { email: input.email }] });
       if (existingUser) {
         return done(null, false, { message: 'A user with that username or email already exists.' });
       }
 
       var user = await User.create({
-        username: normalizedUsername,
-        email: normalizedEmail,
-        password: await bcrypt.hash(password, 12)
+        username: input.username,
+        email: input.email,
+        password: await bcrypt.hash(input.password, 12)
       });
       return done(null, user);
     } catch (err) {
@@ -39,14 +34,15 @@ exports.configure = function(passport) {
   }));
 
   passport.use('login', new LocalStrategy({ passReqToCallback: true }, async function(req, username, password, done) {
-    if (!hasCredentials(username, password)) {
-      return done(null, false, { message: 'Provide a valid username or email and password.' });
+    var input = validation.validateLogin({ username: username, password: password });
+    if (!input.valid) {
+      return done(null, false, { message: input.errors[0] });
     }
 
     try {
-      var identifier = username.trim();
+      var identifier = input.identifier;
       var user = await User.findOne({ $or: [{ username: identifier }, { email: identifier.toLowerCase() }] });
-      if (!user || !(await bcrypt.compare(password, user.password))) {
+      if (!user || !(await bcrypt.compare(input.password, user.password))) {
         return done(null, false, { message: 'Invalid username/email or password.' });
       }
       return done(null, user);
