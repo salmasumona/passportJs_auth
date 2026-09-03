@@ -1,5 +1,7 @@
 'use strict';
-
+if (!globalThis.crypto) {
+  globalThis.crypto = require('crypto').webcrypto;
+}
 require('dotenv').config();
 
 const express = require('express');
