@@ -5,9 +5,17 @@ on:
     branches: [master]
   workflow_dispatch:
 
+concurrency:
+  group: passport-auth-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
 jobs:
   ci:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,14 +35,19 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
   deploy:
     needs: ci
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to EC2 over SSH
+      - name: Deploy to EC2 with automatic rollback
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -43,22 +56,4 @@ jobs:
           port: ${{ secrets.EC2_PORT || 22 }}
           script: |
             cd /var/www/passportJs_auth
-            git fetch origin master
-            git reset --hard origin/master
-            npm ci --omit=dev
-            chmod 600 .env
-            pm2 startOrRestart ecosystem.config.js --update-env
-            pm2 save
-            echo "Waiting for application health..."
-            for i in {1..12}; do
-              if curl -fsS http://127.0.0.1:1800/health; then
-                echo "Application is healthy."
-                exit 0
-              fi
-              echo "Health check attempt $i failed; retrying in 5 seconds..."
-              sleep 5
-            done
-            echo "Application failed health check."
-            pm2 status
-            pm2 logs passport-auth --lines 100 --nostream
-            exit 1
+            bash scripts/deploy.sh

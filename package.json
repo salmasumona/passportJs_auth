@@ -6,7 +6,8 @@
   "scripts": {
     "check": "node --check server.js && node --check routes.js && node --check api/auth/index.js && node --check api/auth/auth.controller.js && node --check middleware/security.js && node --check middleware/rateLimiter.js && node --check utils/validation.js && node --check utils/logger.js",
     "start": "node server.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "ci": "npm run check && npm test"
   },
   "engines": {
     "node": ">=20.19.0"
