@@ -46,5 +46,16 @@ jobs:
             chmod 600 .env
             pm2 startOrRestart ecosystem.config.js --update-env
             pm2 save
-            sleep 2
-            curl -fsS http://127.0.0.1:1800/health
+
+            sleep 5
+
+            if ! curl -fsS http://127.0.0.1:1800/health; then
+              echo "Health check failed."
+              echo "PM2 status:"
+              pm2 status
+              echo "PM2 logs:"
+              pm2 logs passport-auth --lines 100 --nostream
+              exit 1
+            fi
+
+            echo "Deployment successful."
