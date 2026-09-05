@@ -1,185 +1,148 @@
-# Docker + Docker Compose Guide
+# Docker Compose: NGINX + Node.js
 
-This project is now containerized. Docker Compose runs the Node.js/Express application as a production-style container while MongoDB remains in MongoDB Atlas.
+This project runs the application in **two containers**:
 
-## 1. Install Docker
-
-Verify:
-
-```bash
-docker --version
-docker compose version
+```text
+Browser
+   |
+   | http://localhost:8080
+   v
++-----------------------+
+| NGINX container       |
+| host 8080 -> port 80  |
++-----------+-----------+
+            |
+            | Docker network: app:1800
+            v
++-----------------------+
+| Node.js container     |
+| host 1800 -> port 1800|
++-----------+-----------+
+            |
+            v
+      MongoDB Atlas
 ```
 
-On Docker Desktop, make sure Docker Engine is running.
+## Ports
 
-## 2. Configure environment variables
+| Component | Container port | Host port | URL |
+|---|---:|---:|---|
+| NGINX | 80 | 8080 | http://localhost:8080 |
+| Node.js | 1800 | 1800 | http://localhost:1800 |
+
+NGINX forwards requests to `http://app:1800`. `app` is the Compose service name, so Docker's internal DNS resolves it automatically.
+
+## 1. Create environment file
 
 ```bash
 cp .env.docker.example .env
 ```
 
-Edit `.env` and set:
+Set your MongoDB Atlas URI and a strong session secret in `.env`.
 
-```env
-NODE_ENV=production
-HOST=0.0.0.0
-PORT=1800
-MONGO_URI=mongodb+srv://USERNAME:PASSWORD@YOUR-CLUSTER.mongodb.net/authPassport?retryWrites=true&w=majority
-APP_URL=http://localhost:1800
-SESSION_SECRET=your-random-secret-at-least-32-characters
-```
-
-Never commit `.env`.
-
-Generate a strong secret with:
-
-```bash
-openssl rand -base64 48
-```
-
-## 3. Build the image
-
-```bash
-docker compose build
-```
-
-What happens:
-
-```text
-Dockerfile
-   |
-   +--> node:20-bookworm-slim
-   |
-   +--> npm ci --omit=dev
-   |
-   +--> application source
-   |
-   +--> passport-auth image
-```
-
-## 4. Start the application
-
-```bash
-docker compose up -d
-```
-
-Check:
-
-```bash
-docker compose ps
-docker compose logs -f app
-```
-
-Open:
-
-```text
-http://localhost:1800
-```
-
-Health endpoint:
-
-```bash
-curl http://127.0.0.1:1800/health
-```
-
-Expected when Atlas is reachable:
-
-```json
-{"status":"ok","database":"connected"}
-```
-
-## 5. Stop the application
-
-```bash
-docker compose down
-```
-
-The container is removed; the image remains locally.
-
-## 6. Rebuild after code changes
-
-```bash
-docker compose down
-docker compose build --no-cache
-docker compose up -d
-```
-
-Or simply:
+## 2. Build both images / start both containers
 
 ```bash
 docker compose up -d --build
 ```
 
-## 7. Useful commands
+## 3. Check containers
 
 ```bash
 docker compose ps
+```
+
+You should see:
+
+```text
+passport-auth-app
+passport-auth-nginx
+```
+
+## 4. Test Node.js directly
+
+```bash
+curl http://localhost:1800/health
+```
+
+This tests the Node.js container directly.
+
+## 5. Test through NGINX
+
+```bash
+curl http://localhost:8080/health
+```
+
+This tests the real reverse-proxy path:
+
+```text
+Client -> NGINX:8080 -> app:1800 -> Node.js
+```
+
+## 6. View logs
+
+NGINX:
+
+```bash
+docker compose logs -f nginx
+```
+
+Node.js:
+
+```bash
 docker compose logs -f app
-docker compose restart app
-docker compose exec app sh
-docker images
-docker ps
-docker stop passport-auth
-docker rm passport-auth
 ```
 
-## 8. Why HOST=0.0.0.0?
+Both:
 
-The application used `127.0.0.1` by default. Inside a container, that would only expose the process to the container itself. The application now supports `HOST` and Docker sets it to `0.0.0.0`, allowing Docker's port mapping to reach the app.
-
-Local non-Docker development still defaults to `127.0.0.1`.
-
-## 9. Architecture
-
-```text
-Browser
-   |
-   | http://localhost:1800
-   v
-Docker Host
-   |
-   | port mapping 1800:1800
-   v
-+---------------------------+
-| Docker Container          |
-|                           |
-| Node.js + Express         |
-| Passport + Session        |
-| Mongoose                  |
-+-------------+-------------+
-              |
-              | MongoDB URI over TLS
-              v
-       MongoDB Atlas
+```bash
+docker compose logs -f
 ```
 
-## 10. Docker Compose vs PM2
+## 7. Stop containers
 
-The project keeps the existing PM2 deployment path for the current EC2 setup. Docker Compose is an additional deployment option.
-
-- PM2 path: Node.js process runs directly on EC2.
-- Docker path: Node.js runs inside a container.
-- NGINX can remain on the EC2 host and reverse-proxy to `127.0.0.1:1800`.
-- Do not run both PM2 and Docker on the same port at the same time.
-
-For a future container-based production deployment, the recommended flow is:
-
-```text
-GitHub Actions
-     |
-     v
-Build Docker image
-     |
-     v
-Push to container registry
-     |
-     v
-EC2 pulls image
-     |
-     v
-Docker Compose
-     |
-     v
-NGINX -> Container :1800
+```bash
+docker compose down
 ```
+
+## 8. Rebuild after code/config changes
+
+```bash
+docker compose down
+docker compose up -d --build
+```
+
+## Important concept: Docker networking
+
+Do **not** use `localhost:1800` inside the NGINX container. In a container, `localhost` means the NGINX container itself.
+
+Use the Compose service name:
+
+```nginx
+proxy_pass http://app:1800;
+```
+
+Docker Compose creates a network automatically and provides DNS for service names.
+
+## Why two containers?
+
+NGINX and Node.js have separate responsibilities:
+
+- **NGINX:** reverse proxy, HTTP entry point, headers, TLS later, static files/caching if needed.
+- **Node.js:** application logic, Passport authentication, sessions, API/routes.
+
+This separation is closer to a real production architecture and makes it easier to scale or replace either component independently.
+
+## Production note
+
+For local learning, both `8080:80` and `1800:1800` are exposed. In production, you normally expose only NGINX to the public network and keep Node.js reachable only through the Docker network:
+
+```yaml
+ports:
+  - "8080:80"
+
+# app:
+#   no public ports mapping
+```
+
+Then NGINX remains the only public entry point.
