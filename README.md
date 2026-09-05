@@ -1,4 +1,4 @@
-# Passport Auth — MongoDB Atlas + AWS EC2 + NGINX + GitHub Actions
+# Passport Auth — MongoDB Atlas + AWS EC2 + NGINX + GitHub Action
 
 Express + Passport Local authentication application with MongoDB Atlas, production environment variables, PM2, NGINX and GitHub Actions deployment.
 
