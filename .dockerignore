@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+.env
+.env.*
+!.env.example
+!.env.docker.example
+.git
+.github
+.gitignore
+.DS_Store
+*.zip
+coverage
+logs
+terraform/.terraform
+terraform/*.tfstate
+terraform/*.tfstate.*

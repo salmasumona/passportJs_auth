@@ -118,6 +118,28 @@ The workflow runs on pushes to `master`:
 
 MongoDB credentials and the session secret are intentionally NOT stored in GitHub source code. Keep them in `/var/www/passportJs_auth/.env` on EC2.
 
+## 6. Docker + Docker Compose
+
+This repository also supports Docker Compose. MongoDB continues to run in MongoDB Atlas.
+
+```bash
+cp .env.docker.example .env
+# edit .env and set MONGO_URI + SESSION_SECRET
+docker compose up -d --build
+docker compose ps
+curl http://127.0.0.1:1800/health
+```
+
+Stop it with:
+
+```bash
+docker compose down
+```
+
+See `DOCKER_COMPOSE.md` for the step-by-step guide.
+
+> Important: Docker uses `HOST=0.0.0.0` inside the container. The non-Docker local default remains `127.0.0.1`.
+
 ## Architecture
 
 ```text

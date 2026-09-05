@@ -67,8 +67,8 @@ app.use(function(err, req, res, next) { // eslint-disable-line no-unused-vars
 async function start() {
   try {
     await connectDB();
-    const server = app.listen(config.port, '127.0.0.1', function() {
-      logger.info('Server started', { host: '127.0.0.1', port: config.port, env: config.nodeEnv });
+    const server = app.listen(config.port, config.host, function() {
+      logger.info('Server started', { host: config.host, port: config.port, env: config.nodeEnv });
     });
 
     const shutdown = function(signal) {
