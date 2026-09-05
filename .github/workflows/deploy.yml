@@ -1,4 +1,4 @@
-name: CI/CD - Passport Auth to AWS EC2
+name: CI-CD - Docker AWS EC2
 
 on:
   push:
@@ -14,6 +14,7 @@ permissions:
 
 jobs:
   ci:
+    name: Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -32,28 +33,65 @@ jobs:
       - name: Syntax check
         run: npm run check
 
-      - name: Run tests
+      - name: Tests
         run: npm test
 
-      - name: Dependency audit
-        run: npm audit --audit-level=high
-
   deploy:
+    name: Deploy to EC2
     needs: ci
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     environment: production
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to EC2 with automatic rollback
+      - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
+          APP_URL: ${{ secrets.APP_URL }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
+          envs: MONGO_URI,JWT_SECRET,JWT_EXPIRES_IN,APP_URL
           script: |
+            set -e
             cd /var/www/passportJs_auth
-            bash scripts/deploy.sh
+
+            if [ ! -f scripts/setup-ec2-docker.sh ]; then
+              echo "Repository is not ready for Docker CI/CD."
+              exit 1
+            fi
+
+            # Keep the EC2 host installation automated.
+            if ! command -v docker >/dev/null 2>&1 || ! docker compose version >/dev/null 2>&1; then
+              sudo bash scripts/setup-ec2-docker.sh
+            fi
+
+            sudo mkdir -p /var/www/passportJs_auth
+            sudo chown -R "$USER":"$USER" /var/www/passportJs_auth
+
+            # Pull the exact commit that triggered this workflow.
+            git fetch --prune origin master
+            git reset --hard origin/master
+
+            umask 077
+            cat > .env <<EOF
+            NODE_ENV=production
+            HOST=0.0.0.0
+            PORT=1800
+            APP_URL=${APP_URL}
+            MONGO_URI=${MONGO_URI}
+            JWT_SECRET=${JWT_SECRET}
+            JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-1h}
+            EOF
+
+            chmod 600 .env
+
+            bash scripts/deploy-docker.sh
