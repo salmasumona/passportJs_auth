@@ -32,7 +32,7 @@ else
 fi
 
 cd "$APP_DIR"
-npm ci --omit=dev
+npm install --omit=dev
 
 mkdir -p /var/www/certbot
 cp deploy/nginx/passport-auth.conf /etc/nginx/sites-available/passport-auth
@@ -46,7 +46,7 @@ if [[ ! -f "$APP_DIR/.env" ]]; then
   cp "$APP_DIR/.env.example" "$APP_DIR/.env"
   chown "${SUDO_USER:-ubuntu}:${SUDO_USER:-ubuntu}" "$APP_DIR/.env"
   chmod 600 "$APP_DIR/.env"
-  echo "Created $APP_DIR/.env. Fill in MongoDB Atlas and SESSION_SECRET before starting the app."
+  echo "Created $APP_DIR/.env. Fill in MongoDB Atlas and JWT_SECRET before starting the app."
 fi
 
 pm2 startup systemd -u "${SUDO_USER:-ubuntu}" --hp "/home/${SUDO_USER:-ubuntu}" | tail -n 1 || true

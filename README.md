@@ -11,7 +11,7 @@ npm install
 cp .env.example .env
 ```
 
-Set `MONGO_URI` to your MongoDB Atlas connection string and create a strong `SESSION_SECRET` (32+ characters).
+Set `MONGO_URI` to your MongoDB Atlas connection string and create a strong `JWT_SECRET` (32+ characters).
 
 ```bash
 npm run check
@@ -65,7 +65,7 @@ Production example:
 MONGO_URI=mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/authPassport?retryWrites=true&w=majority
 PORT=1800
 APP_URL=https://YOUR_DOMAIN
-SESSION_SECRET=use-a-random-secret-at-least-32-characters
+JWT_SECRET=use-a-random-secret-at-least-32-characters
 NODE_ENV=production
 ```
 
@@ -108,7 +108,7 @@ The workflow runs on pushes to `master`:
 
 1. Checkout
 2. Node.js 20 setup
-3. `npm ci`
+3. `npm install`
 4. Syntax check
 5. SSH to EC2
 6. Pull latest `master`
@@ -116,7 +116,7 @@ The workflow runs on pushes to `master`:
 8. Restart PM2
 9. Check `/health`
 
-MongoDB credentials and the session secret are intentionally NOT stored in GitHub source code. Keep them in `/var/www/passportJs_auth/.env` on EC2.
+MongoDB credentials and the JWT secret are intentionally NOT stored in GitHub source code. Keep them in `/var/www/passportJs_auth/.env` on EC2.
 
 ## 6. Docker + Docker Compose
 
@@ -124,7 +124,7 @@ This repository also supports Docker Compose. MongoDB continues to run in MongoD
 
 ```bash
 cp .env.docker.example .env
-# edit .env and set MONGO_URI + SESSION_SECRET
+# edit .env and set MONGO_URI + JWT_SECRET
 docker compose up -d --build
 docker compose ps
 curl http://127.0.0.1:1800/health
@@ -183,10 +183,34 @@ This version includes:
 ### Phase 1 validation
 Run locally:
 ```bash
-npm ci
+npm install
 npm run check
 npm test
 ```
 
 ### Production note
-The in-memory rate limiter and Express session store are process-local. They are suitable for a single EC2 learning/demo server, but for multiple instances use a shared rate-limit/session store such as Redis or another persistent store.
+The in-memory rate limiter is process-local. It is suitable for a single EC2 learning/demo server, but for multiple instances use a shared rate-limiting solution such as Redis-backed rate limiting.
+
+## JWT Authentication
+
+This version no longer uses `express-session` or Passport session serialization. Passport LocalStrategy is still used to validate registration/login credentials, but successful authentication creates a signed JWT.
+
+- `POST /auth/registration` creates a user and issues a JWT.
+- `POST /auth/login` validates credentials and issues a JWT.
+- The JWT is stored in an `HttpOnly` `access_token` cookie for the browser UI.
+- `GET /auth/me` verifies the JWT and returns the authenticated user.
+- `POST /auth/logout` clears the JWT cookie.
+- API clients may also send `Authorization: Bearer <JWT>`.
+
+Required environment variables:
+
+```env
+MONGO_URI=...
+JWT_SECRET=at-least-32-random-characters
+JWT_EXPIRES_IN=1h
+NODE_ENV=development
+HOST=127.0.0.1
+PORT=1800
+```
+
+The JWT cookie is marked `Secure` in production. No server-side session store is required, so the Express MemoryStore warning is eliminated.

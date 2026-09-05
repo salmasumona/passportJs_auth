@@ -29,7 +29,7 @@ rollback() {
   echo "Deployment failed. Rolling back to $previous_sha..."
   git reset --hard "$previous_sha" || true
   if [[ -f .env ]]; then chmod 600 .env; fi
-  npm ci --omit=dev || true
+  npm install --omit=dev || true
   pm2 startOrRestart ecosystem.config.js --update-env || true
   pm2 save || true
   for i in $(seq 1 6); do
@@ -56,7 +56,7 @@ if [[ ! -f .env ]]; then
 fi
 chmod 600 .env
 
-npm ci --omit=dev
+npm install --omit=dev
 pm2 startOrRestart ecosystem.config.js --update-env
 pm2 save
 

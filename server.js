@@ -6,17 +6,15 @@ const express = require('express');
 const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const passport = require('passport');
-const session = require('express-session');
 const config = require('./config/config');
-const User = require('./api/auth/auth.model');
 const securityHeaders = require('./middleware/security');
 const createRateLimiter = require('./middleware/rateLimiter');
 const logger = require('./utils/logger');
 
 const app = express();
 
-if (!config.sessionSecret || config.sessionSecret.length < 32) {
-  throw new Error('SESSION_SECRET must be set and contain at least 32 characters.');
+if (!config.jwtSecret || config.jwtSecret.length < 32) {
+  throw new Error('JWT_SECRET must be set and contain at least 32 characters.');
 }
 if (!config.mongoUri) {
   throw new Error('MONGO_URI must be configured.');
@@ -29,25 +27,7 @@ app.use(express.static(__dirname + '/public'));
 app.use(express.urlencoded({ extended: false, limit: '20kb' }));
 app.use(express.json({ limit: '20kb' }));
 
-app.use(session({
-  secret: config.sessionSecret,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: config.nodeEnv === 'production',
-    maxAge: 1000 * 60 * 60 * 24
-  }
-}));
-
 app.use(passport.initialize());
-app.use(passport.session());
-
-passport.serializeUser(function(user, done) { done(null, user.id); });
-passport.deserializeUser(function(id, done) {
-  User.findById(id).then(function(user) { done(null, user); }).catch(done);
-});
 
 app.get('/health', function(req, res) {
   const state = mongoose.connection.readyState;

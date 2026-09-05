@@ -1,14 +1,17 @@
 var myApp = angular.module('profileApp',['ngCookies']);
 
-myApp.controller('Profilectrl',['$scope','$http','$window','$cookieStore',function($scope,$http,$window,$cookieStore){
+myApp.controller('Profilectrl',['$scope','$http','$window',function($scope,$http,$window){
+  $scope.user = 'Loading...';
 
-	$scope.user = $cookieStore.get('loggeduser');	
-	$scope.logout = function(){	console.log("fff");	
-		$http.get('/logout').success(function(response){
-			$cookieStore.remove('loggeduser');
-			$window.location.href = "/";
-		});
-	};
+  $http.get('/auth/me').then(function(response){
+    $scope.user = response.data.username;
+  }, function(){
+    $window.location.href = '/login';
+  });
 
-	
+  $scope.logout = function(){
+    $http.post('/auth/logout').finally(function(){
+      $window.location.href = '/';
+    });
+  };
 }]);

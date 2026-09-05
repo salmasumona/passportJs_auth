@@ -38,7 +38,7 @@ NGINX forwards requests to `http://app:1800`. `app` is the Compose service name,
 cp .env.docker.example .env
 ```
 
-Set your MongoDB Atlas URI and a strong session secret in `.env`.
+Set your MongoDB Atlas URI and a strong JWT secret in `.env`.
 
 ## 2. Build both images / start both containers
 
@@ -129,7 +129,7 @@ Docker Compose creates a network automatically and provides DNS for service name
 NGINX and Node.js have separate responsibilities:
 
 - **NGINX:** reverse proxy, HTTP entry point, headers, TLS later, static files/caching if needed.
-- **Node.js:** application logic, Passport authentication, sessions, API/routes.
+- **Node.js:** application logic, Passport authentication, JWT authentications, API/routes.
 
 This separation is closer to a real production architecture and makes it easier to scale or replace either component independently.
 

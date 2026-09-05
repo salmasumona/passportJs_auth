@@ -2,13 +2,6 @@
 
 var path = require('path');
 
-function isAuthenticated(req, res, next) {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  return res.redirect('/');
-}
-
 module.exports = function(app, passport) {
   app.use('/auth', require('./api/auth')(passport));
   app.get('/registration', function(req, res) {
@@ -17,16 +10,18 @@ module.exports = function(app, passport) {
   app.get('/login', function(req, res) {
     res.sendFile(path.join(__dirname, 'public/view/login.html'));
   });
-  app.get('/profile', isAuthenticated, function(req, res) {
+  app.get('/profile', function(req, res) {
     res.sendFile(path.join(__dirname, 'public/view/profile.html'));
   });
-  app.get('/logout', function(req, res, next) {
-    req.logout(function(err) {
-      if (err) {
-        return next(err);
-      }
-      return res.redirect('/');
-    });
+  app.get('/logout', function(req, res) {
+    res.setHeader('Set-Cookie', [
+      'access_token=',
+      'Path=/',
+      'HttpOnly',
+      'SameSite=Lax',
+      'Max-Age=0'
+    ].concat(process.env.NODE_ENV === 'production' ? ['Secure'] : []).join('; '));
+    return res.redirect('/');
   });
 
   // Express 5 requires named wildcards; this also matches the root path.

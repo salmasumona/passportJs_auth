@@ -13,7 +13,7 @@
 2. Attach an Elastic IP.
 3. Security group: SSH 22 from your IP; HTTP 80 and HTTPS 443 from the internet.
 4. Clone the repository and run `sudo bash scripts/setup-ec2.sh`.
-5. Set `/var/www/passportJs_auth/.env` with Atlas URI, `APP_URL`, `SESSION_SECRET`, and `NODE_ENV=production`.
+5. Set `/var/www/passportJs_auth/.env` with Atlas URI, `APP_URL`, `JWT_SECRET`, and `NODE_ENV=production`.
 6. Run `./scripts/deploy.sh`.
 
 ## NGINX + TLS
@@ -46,4 +46,4 @@ curl http://127.0.0.1:1800/health
 curl -I https://YOUR_DOMAIN
 ```
 
-Do not put MongoDB passwords, session secrets, or private SSH keys in the repository.
+Do not put MongoDB passwords, JWT secrets, or private SSH keys in the repository.

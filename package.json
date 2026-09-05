@@ -4,7 +4,7 @@
   "description": "Passport local-authentication example using Express and MongoDB",
   "main": "server.js",
   "scripts": {
-    "check": "node --check server.js && node --check routes.js && node --check api/auth/index.js && node --check api/auth/auth.controller.js && node --check middleware/security.js && node --check middleware/rateLimiter.js && node --check utils/validation.js && node --check utils/logger.js",
+    "check": "node --check server.js && node --check routes.js && node --check api/auth/index.js && node --check api/auth/auth.controller.js && node --check middleware/auth.js && node --check middleware/security.js && node --check middleware/rateLimiter.js && node --check utils/validation.js && node --check utils/logger.js",
     "start": "node server.js",
     "test": "node --test test/*.test.js",
     "ci": "npm run check && npm test",
@@ -24,9 +24,9 @@
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "express-session": "^1.19.0",
     "mongoose": "^9.9.4",
     "passport": "^0.7.0",
-    "passport-local": "^1.0.0"
+    "passport-local": "^1.0.0",
+    "jsonwebtoken": "^9.0.2"
   }
 }

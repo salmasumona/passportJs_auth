@@ -25,7 +25,7 @@ if ! git cat-file -e "${TARGET_SHA}^{commit}" 2>/dev/null; then
 fi
 
 git reset --hard "$TARGET_SHA"
-npm ci --omit=dev
+npm install --omit=dev
 chmod 600 .env
 pm2 startOrRestart ecosystem.config.js --update-env
 pm2 save

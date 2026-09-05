@@ -1,6 +1,6 @@
 var myApp = angular.module('loginApp',['ngCookies']);
 
-myApp.controller('Logintrl',['$scope','$http','$window','$cookieStore',function($scope,$http,$window,$cookieStore){
+myApp.controller('Logintrl',['$scope','$http','$window',function($scope,$http,$window){
 	
 	$scope.message = "Please enter your username and password for registration.";
 	$scope.messageLogin = "Please enter your username and password for login";
@@ -12,7 +12,7 @@ myApp.controller('Logintrl',['$scope','$http','$window','$cookieStore',function(
 			if($scope.user.username!="" && $scope.user.username.length>=4 && $scope.user.password!="" && $scope.user.cpassword!="" && $scope.user.password==$scope.user.cpassword){
 					$http.post("/auth/registration",$scope.user).then(function(response){
 						if(response.data.username){
-					    $cookieStore.put('loggeduser', response.data.username);
+					    
 						    $window.location.href = "/profile";							
 						}
 					}, function(response){
@@ -37,7 +37,7 @@ myApp.controller('Logintrl',['$scope','$http','$window','$cookieStore',function(
 				if($scope.user.username!="" && $scope.user.username.length>=4 && $scope.user.password!=""){
 								$http.post("/auth/login",$scope.user).then(function(response){
 									if (response.data.username){
-										$cookieStore.put('loggeduser', response.data.username);
+										
 										$window.location.href = "/profile";
 									}
 								}, function(response){
